@@ -9,7 +9,7 @@
 
 This is an attempt -for educational purposes only- to alter a Unity game at runtime without patching the binaries (so without using [Cecil](https://github.com/jbevain/cecil) nor [Reflexil](https://github.com/sailro/reflexil)).
 
-`master` branch can build against `EFT 0.14.1.29197` (tested with [`spt-aki Version 3.8.0`](https://hub.sp-tarkov.com/files/file/16-spt-aki/#versions)). If you are looking for another version, see [`branches`](https://github.com/sailro/EscapeFromTarkov-Trainer/branches) and [`releases`](https://github.com/sailro/EscapeFromTarkov-Trainer/releases).
+`master` branch can build against `EFT 0.14.1.29197` (tested with [`spt-aki Version 3.8.3`](https://hub.sp-tarkov.com/files/file/16-spt-aki/#versions)). If you are looking for another version, see [`branches`](https://github.com/sailro/EscapeFromTarkov-Trainer/branches) and [`releases`](https://github.com/sailro/EscapeFromTarkov-Trainer/releases).
 
 > If you want to compile the code yourself, make sure you cleaned-up your solution properly after upgrading your EFT/sptarkov bits (even removing `bin` and `obj` folders) and check all your references.
 
@@ -27,10 +27,11 @@ This is an attempt -for educational purposes only- to alter a Unity game at runt
 | `Commands`                | `commands`   | Popup window to enable/disable all features (use right-alt or setup your own key in [trainer.ini](#sample-trainerini-configuration-file)). |
 | `CrossHair`               | `crosshair`  | Crosshair with customizable size, color, thickness and auto-hide feature when aiming. |
 | `Durability`              | `durability` | Maximum durability of items. |
-| `Examine`                 | `examine`    | All items already examined. |
+| `Examine`                 | `examine`    | All items already examined. Instant search. |
 | `ExfiltrationPoints`      | `exfil`      | Exfiltration points with customizable colors given eligibility, status filter, distance. |
 | `FovChanger`              | `fovchanger` | Change Field Of View (FOV). |
 | `FreeCamera`              | `camera`     | Free camera with fast mode and teleportation. |
+| `Ghost`                   | `ghost`      | Stop bots from seeing you. |
 | `Grenades`                | `grenade`    | Grenades outline. |
 | `Health`                  | `health`     | Full health, prevent any damage (so even when falling), keep energy and hydration at maximum. |
 | `Hits`                    | `hits`       | Hit markers (hit, armor, health with configurable colors). |
@@ -111,6 +112,7 @@ This trainer hooks into the command system, so you can easily setup features usi
 | examine    | `on` or `off`       | `off`   | Enable/Disable all item examined    |
 | exfil      | `on` or `off`       | `on`    | Show/Hide exfiltration points       |
 | fovchanger | `on` or `off`       | `off`   | Change FOV value                    |
+| ghost      | `on` or `off`       | `off`   | Enable/Disable ghost mode           |
 | grenade    | `on` or `off`       | `off`   | Show/Hide grenades                  |
 | health     | `on` or `off`       | `off`   | Enable/Disable full health          |
 | hits       | `on` or `off`       | `off`   | Show/Hide hit markers               |

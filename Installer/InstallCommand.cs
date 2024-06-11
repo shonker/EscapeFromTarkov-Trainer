@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
@@ -155,6 +156,9 @@ internal sealed class InstallCommand : AsyncCommand<InstallCommand.Settings>
 			.Distinct()
 			.ToArray();
 
+		if (context.IsFatalFailure)
+			return (compilation, archive);
+
 		if (compilation == null)
 		{
 			// Failure, so try with a dedicated branch if exists
@@ -234,7 +238,7 @@ internal sealed class InstallCommand : AsyncCommand<InstallCommand.Settings>
 	{
 		var errors = Array.Empty<Diagnostic>();
 
-		var archive = context.Archive ?? await GetSnapshotAsync(context.Try, context.Branch);
+		var archive = context.Archive ?? await GetSnapshotAsync(context, context.Branch);
 		if (archive == null)
 		{
 			context.Try++;
@@ -273,7 +277,7 @@ internal sealed class InstallCommand : AsyncCommand<InstallCommand.Settings>
 		return (compilation, archive, errors);
 	}
 
-	private static async Task<ZipArchive?> GetSnapshotAsync(int @try, string branch)
+	private static async Task<ZipArchive?> GetSnapshotAsync(CompilationContext context, string branch)
 	{
 		var status = $"Downloading repository snapshot ({branch} branch)...";
 		ZipArchive? result = null;
@@ -282,9 +286,38 @@ internal sealed class InstallCommand : AsyncCommand<InstallCommand.Settings>
 		{
 			await AnsiConsole
 				.Status()
-				.StartAsync(status, async _ =>
+				.StartAsync(status, async statusContext =>
 				{
-					using var client = new HttpClient();
+
+					var handler = new HttpClientHandler { ServerCertificateCustomValidationCallback = (request, certificate, chain, errors) =>
+						{
+							if (errors == SslPolicyErrors.None)
+								return true;
+
+							context.IsFatalFailure = true;
+							statusContext.Status = "!";
+							statusContext.Refresh();
+
+#if DEBUG
+							AnsiConsole.MarkupLine($"[grey][[{errors}]] We found SSL issues.[/]");
+							foreach (var chainStatus in chain?.ChainStatus ?? [])
+								AnsiConsole.MarkupLine($"[grey][[{chainStatus.Status}]] {chainStatus.StatusInformation.EscapeMarkup()}[/]");
+#endif
+
+							AnsiConsole.MarkupLine($@"[yellow]Warning: We have detected a problem while retrieving the source code from {request.RequestUri?.ToString().EscapeMarkup()}[/]");
+							AnsiConsole.MarkupLine(@"[yellow]Typically this is a user-side problem when something interferes with HTTPS/SSL: security or malicious software, antivirus, proxies, VPN, DNS, etc.[/]");
+
+							if (certificate?.Subject == null) 
+								return true;
+
+							AnsiConsole.MarkupLine(@$"[yellow]We got the following certificate [[{certificate.Subject.EscapeMarkup()}]] while expecting something from Github.[/]");
+							AnsiConsole.MarkupLine(@"[yellow]Please try to temporarily disable any software preventing this installer from working properly.[/]");
+
+							return true;
+						}
+					};
+
+					using var client = new HttpClient(handler);
 					var buffer = await client.GetByteArrayAsync(new Uri($"https://github.com/sailro/EscapeFromTarkov-Trainer/archive/refs/heads/{branch}.zip"));
 					var stream = new MemoryStream(buffer);
 					result = new ZipArchive(stream, ZipArchiveMode.Read);
@@ -292,7 +325,7 @@ internal sealed class InstallCommand : AsyncCommand<InstallCommand.Settings>
 		}
 		catch (Exception ex)
 		{
-			AnsiConsole.MarkupLine(ex is HttpRequestException {StatusCode: HttpStatusCode.NotFound} ? $">> [blue]Try #{@try}[/] [yellow]Branch {branch.EscapeMarkup()} not found.[/]" : $"[red]Error: {ex.Message.EscapeMarkup()}[/]");
+			AnsiConsole.MarkupLine(ex is HttpRequestException {StatusCode: HttpStatusCode.NotFound} ? $">> [blue]Try #{context.Try}[/] [yellow]Branch {branch.EscapeMarkup()} not found.[/]" : $"[red]Error: {ex.Message.EscapeMarkup()}[/]");
 		}
 
 		return result;

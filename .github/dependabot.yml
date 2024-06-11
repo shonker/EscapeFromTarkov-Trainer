@@ -1,0 +1,19 @@
+---
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      roslyn:
+        patterns:
+          - "Microsoft.CodeAnalysis*"
+      analyzers:
+        patterns:
+          - "*Analyzers"
+  
